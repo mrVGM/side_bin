@@ -6,9 +6,6 @@ function getWebCurrentWebview() {
     return wnd;
 }
 
-let greetInputEl;
-let greetMsgEl;
-
 async function resizeWin(x, y, w, h) {
     await invoke("resize_win", { 
         x: x,
@@ -25,8 +22,57 @@ async function monitorCommand(action, file) {
     });
 }
 
+let fileCallbacks = [];
+
+async function registerFile(elem) {
+    const file = elem.storedFile;
+    await new Promise(async resolve => {
+        async function task() {
+            await monitorCommand("register", file);
+            resolve();
+        }
+        fileCallbacks.push(task);
+    });
+
+    while (elem.storedFile) {
+        await new Promise(resolve => {
+            async function task() {
+                await monitorCommand("update", file);
+                resolve();
+            }
+            fileCallbacks.push(task);
+        });
+    }
+    fileCallbacks.push(async () => {
+        await monitorCommand("unregister", file);
+    });
+}
+
+async function mainTick() {
+    async function tick() {
+        const funcs = fileCallbacks;
+        fileCallbacks = [];
+
+        const promises = funcs.map(f => {
+            return f();
+        });
+        await Promise.all(promises);
+
+        await monitorCommand("tick", "");
+    }
+    while (true) {
+        await tick();
+        await new Promise(resolve => {
+            setTimeout(() => {
+                resolve();
+            }, 1000);
+        });
+    }
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
     const mainElement = document.querySelector("#main");
+    mainTick();
 
     let state;
     function expandWindow() {
@@ -70,14 +116,13 @@ window.addEventListener("DOMContentLoaded", async () => {
             if (item.storedFile) {
                 return;
             }
-            console.log("asd");
             if (
                 rect.x <= pos.x &&
                 pos.x <= rect.x + rect.width &&
                 rect.y <= pos.y &&
                 pos.y <= rect.y + rect.height) {
                 item.storedFile = file;
-                monitorCommand("drop", file);
+                registerFile(item);
                 item.classList.add("item-full");
                 console.log("file stored");
             }
@@ -116,6 +161,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 icon: "",
                 mode: "move"
             });
+            item.storedFile = undefined;
         });
     });
 
