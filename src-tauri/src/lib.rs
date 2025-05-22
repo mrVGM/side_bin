@@ -5,8 +5,9 @@ mod fs_mon {
 }
 
 #[tauri::command]
-fn monitor_command(action: &str, file: &str) {
+fn monitor_command(action: &str, file: &str) -> String {
     println!("Command {} {}", action, file);
+    "dummy response".into()
 }
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/

@@ -16,10 +16,12 @@ async function resizeWin(x, y, w, h) {
 }
 
 async function monitorCommand(action, file) {
-    await invoke("monitor_command", {
+    let response = await invoke("monitor_command", {
         action,
         file
     });
+
+    console.log("Response from Rust: ", response);
 }
 
 let fileCallbacks = [];
