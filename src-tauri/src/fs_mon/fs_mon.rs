@@ -119,7 +119,6 @@ impl Drop for FSEventIter {
     }
 }
 
-
 pub fn test() -> std::io::Result<()> {
 
     let monitor = FSEventIter::new("C:\\")?;
