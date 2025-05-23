@@ -1,4 +1,4 @@
-use std::{alloc::Layout, cell::LazyCell, sync::LazyLock, time::SystemTime};
+use std::{alloc::Layout, cell::LazyCell, str::FromStr, sync::LazyLock, time::SystemTime};
 
 use mac_address::get_mac_address;
 use tauri::{AppHandle, Manager};
@@ -32,16 +32,50 @@ static CLOCK: LazyLock<Clock> = LazyLock::new(|| -> Clock {
     Clock::new()
 });
 
-#[tauri::command]
-fn monitor_command(action: &str, file: &str) -> String {
+fn tag_file(file: &str) -> String {
     let mac_address = get_mac_address().unwrap().unwrap();
     let clock = &*CLOCK;
     
     let uuid = Uuid::new_v1(Timestamp::now(clock), &mac_address.bytes());
-    let as_str = format!("{}", uuid);
+    let uuid = format!("{}", uuid);
 
+    let file = file.to_owned() + ":dd_tag";
+    let file = std::path::PathBuf::from_str(&file).unwrap();
+    std::fs::write(file, &uuid).unwrap();
+
+    uuid
+}
+
+fn get_tag(file: &str) -> Option<String> {
+    let file = file.to_owned() + ":dd_tag";
+    let res = std::fs::read(file);
+    match res {
+        Ok(res) => {
+            let uuid = String::from_utf8(res).unwrap();
+            Some(uuid)
+        }
+        Err(e) => {
+            dbg!(e);
+            None
+        }
+    }
+}
+
+#[tauri::command]
+fn monitor_command(action: &str, file: &str) -> String {
     println!("Command {} {}", action, file);
-    as_str
+    match action {
+        "register" => {
+            return tag_file(file);
+        }
+        "update" => {
+            if let Some(tag) = get_tag(file) {
+                return tag;
+            }
+        }
+        _ => {}
+    }
+    "dummy".into()
 }
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
