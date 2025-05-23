@@ -1,4 +1,4 @@
-use fs_mon::{file_tag::{get_tag, tag_file}, trackers::{self, get_tracker_state}};
+use fs_mon::{file_tag::{get_tag, tag_file}, trackers::{self, get_tracker_state, tick}};
 use serde_json::json;
 use tauri::{AppHandle, Manager};
 
@@ -12,6 +12,9 @@ mod fs_mon {
 fn monitor_command(action: &str, file: &str) -> String {
     println!("Command {} {}", action, file);
     match action {
+        "tick" => {
+            tick();
+        }
         "register" => {
             let file_id = fs_mon::trackers::register_file(file);
             return file_id;

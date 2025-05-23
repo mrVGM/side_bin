@@ -37,7 +37,7 @@ fn to_null_terminated(s: &str) -> Vec<u8> {
 }
 
 #[derive(Debug)]
-enum FSEvent {
+pub enum FSEvent {
     FileAdded(String),
     FileRemoved(String),
     FileModified(String),
@@ -45,12 +45,12 @@ enum FSEvent {
     FileRenamedNew(String)
 }
 
-struct FSEventIter {
+pub struct FSEventIter {
     root: String
 }
 
 impl FSEventIter {
-    fn new(root: &str) -> Result<Self, std::io::Error> {
+    pub fn new(root: &str) -> Result<Self, std::io::Error> {
         let dir = to_null_terminated(&root);
         let res = unsafe {
             let dir = dir.as_ptr();
@@ -68,7 +68,7 @@ impl FSEventIter {
         Ok(res)
     }
 
-    fn tick(&self) -> Result<(), std::io::Error> {
+    pub fn tick(&self) -> Result<(), std::io::Error> {
         let res = unsafe {
             let dir = to_null_terminated(&self.root);
             Tick(dir.as_ptr())
@@ -81,7 +81,7 @@ impl FSEventIter {
         Ok(())
     }
 
-    fn get_event(&self) -> Option<FSEvent> {
+    pub fn get_event(&self) -> Option<FSEvent> {
         unsafe {
             let dir = to_null_terminated(&self.root);
             let evt = Peek(dir.as_ptr());
