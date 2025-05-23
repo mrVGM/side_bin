@@ -1,13 +1,47 @@
+use std::{alloc::Layout, cell::LazyCell, sync::LazyLock, time::SystemTime};
+
+use mac_address::get_mac_address;
 use tauri::{AppHandle, Manager};
+use uuid::{ClockSequence, Timestamp, Uuid};
 
 mod fs_mon {
     pub mod fs_mon;
 }
 
+struct Clock(u128);
+
+impl Clock {
+    fn new() -> Self {
+        let now = SystemTime::now();
+        let duration_since_epoch = now.duration_since(SystemTime::UNIX_EPOCH).unwrap();
+        let time_stamp = duration_since_epoch.as_nanos();
+
+        Clock(time_stamp)
+    }
+}
+
+impl ClockSequence for Clock {
+    type Output = u128;
+
+    fn generate_sequence(&self, seconds: u64, subsec_nanos: u32) -> Self::Output {
+        self.0 + (1_000_000_000 * seconds as u128) + (subsec_nanos as u128)
+    }
+}
+
+static CLOCK: LazyLock<Clock> = LazyLock::new(|| -> Clock {
+    Clock::new()
+});
+
 #[tauri::command]
 fn monitor_command(action: &str, file: &str) -> String {
+    let mac_address = get_mac_address().unwrap().unwrap();
+    let clock = &*CLOCK;
+    
+    let uuid = Uuid::new_v1(Timestamp::now(clock), &mac_address.bytes());
+    let as_str = format!("{}", uuid);
+
     println!("Command {} {}", action, file);
-    "dummy response".into()
+    as_str
 }
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
