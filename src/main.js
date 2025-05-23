@@ -22,28 +22,32 @@ async function monitorCommand(action, file) {
     });
 
     console.log("Response from Rust: ", response);
+    return response;
 }
 
 let fileCallbacks = [];
 
 async function registerFile(elem) {
     const file = elem.storedFile;
-    await new Promise(async resolve => {
+    const fileId = await new Promise(async resolve => {
         async function task() {
-            await monitorCommand("register", file);
-            resolve();
+            let fileId = await monitorCommand("register", file);
+            resolve(fileId);
         }
         fileCallbacks.push(task);
     });
 
+    console.log("file registered as", fileId);
+
     while (elem.storedFile) {
-        await new Promise(resolve => {
+        const state = await new Promise(resolve => {
             async function task() {
-                await monitorCommand("update", file);
+                await monitorCommand("update", fileId);
                 resolve();
             }
             fileCallbacks.push(task);
         });
+        console.log(state);
     }
     fileCallbacks.push(async () => {
         await monitorCommand("unregister", file);

@@ -1,9 +1,11 @@
-use fs_mon::file_tag::{get_tag, tag_file};
+use fs_mon::{file_tag::{get_tag, tag_file}, trackers::{self, get_tracker_state}};
+use serde_json::json;
 use tauri::{AppHandle, Manager};
 
 mod fs_mon {
     pub mod fs_mon;
     pub mod file_tag;
+    pub mod trackers;
 }
 
 #[tauri::command]
@@ -11,11 +13,19 @@ fn monitor_command(action: &str, file: &str) -> String {
     println!("Command {} {}", action, file);
     match action {
         "register" => {
-            return tag_file(file);
+            let file_id = fs_mon::trackers::register_file(file);
+            return file_id;
         }
         "update" => {
-            if let Some(tag) = get_tag(file) {
-                return tag;
+            let state = get_tracker_state(file);
+            match state {
+                Some(state) => {
+                    let state_json = serde_json::to_string(&state).unwrap();
+                    return state_json;
+                }
+                None => {
+                    return "{}".to_string();
+                }
             }
         }
         _ => {}
