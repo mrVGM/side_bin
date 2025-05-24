@@ -21,7 +21,6 @@ async function monitorCommand(action, file) {
         file
     });
 
-    console.log(response);
     response = JSON.parse(response);
 
     return response;
@@ -39,11 +38,14 @@ async function registerFile(elem) {
         fileCallbacks.push(task);
     });
     const fileId = fileIdObj.id;
-    
-    console.log("file registered as", fileId);
+
+    let stop = false;
+    elem.closeFunc = () => {
+        stop = true;
+    };
 
     let age = 0;
-    while (elem.storedFile) {
+    while (!stop && elem.storedFile) {
         const state = await new Promise(resolve => {
             async function task() {
                 let state = await monitorCommand("update", fileId);
@@ -53,20 +55,20 @@ async function registerFile(elem) {
         });
         if (state.Certain) {
             age = 0;
-            console.log("Certain");
             elem.storedFile = state.Certain.path;
         }
         else {
             if (age > 3) {
                 elem.storedFile = undefined;
             }
-            console.log(state, age);
             ++age;
         }
     }
 
+    elem.storedFile = undefined;
     await unregister(fileId);
     elem.classList.remove("item-full");
+    elem.close.style.display = "none"
 }
 
 async function unregister(id) {
@@ -97,7 +99,7 @@ async function mainTick() {
         await new Promise(resolve => {
             setTimeout(() => {
                 resolve();
-            }, 1000);
+            }, 10);
         });
     }
 }
@@ -129,14 +131,29 @@ window.addEventListener("DOMContentLoaded", async () => {
     const item2 = document.querySelector("#slot2");
     const item3 = document.querySelector("#slot3");
 
+    const close1 = document.querySelector("#close1");
+    const close2 = document.querySelector("#close2");
+    const close3 = document.querySelector("#close3");
+
     const items = [item1, item2, item3];
+    item1.close = close1;
+    item2.close = close2;
+    item3.close = close3;
 
     const dropSlots = [];
     const hoverSlots = [];
 
     items.forEach(item => {
+        item.close.style.display = "none";
+        item.closeFunc = undefined;
+        item.close.addEventListener("mousedown", () => {
+            if (item.closeFunc) {
+                item.closeFunc();
+            }
+            item.closeFunc = undefined;
+        });
+
         dropSlots.push((payload) => {
-            console.log("drop start");
             const rect = item.getBoundingClientRect();
             const pos = payload.position;
             const paths = payload.paths;
@@ -156,7 +173,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 item.storedFile = file;
                 registerFile(item);
                 item.classList.add("item-full");
-                console.log("file stored");
+                item.close.style.display = "";
             }
         });
 
@@ -214,7 +231,6 @@ window.addEventListener("DOMContentLoaded", async () => {
                 slot();
             });
         } else {
-            console.log('File drop cancelled');
             collapseWindow();
         }
     });

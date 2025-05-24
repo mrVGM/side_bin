@@ -10,7 +10,6 @@ mod fs_mon {
 
 #[tauri::command]
 fn monitor_command(action: &str, file: &str) -> String {
-    println!("Command {} {}", action, file);
     match action {
         "tick" => {
             tick();

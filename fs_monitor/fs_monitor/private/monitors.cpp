@@ -132,12 +132,16 @@ DirMonitor::DirMonitor(const wchar_t* dir, std::queue<Blocker*>& scheduler) :
     }
 
     _player.emplace<CoroutinePlayer>(StartMonitoring());
+
+    std::wcout << L"Monitoring " << dir << L" start!" << std::endl;
 }
 
 DirMonitor::~DirMonitor()
 {
     CloseHandle(_hDir);
     CloseHandle(_hEvent);
+
+    std::wcout << L"Monitoring " << L" end!" << std::endl;
 }
 
 void DirMonitor::Tick()
