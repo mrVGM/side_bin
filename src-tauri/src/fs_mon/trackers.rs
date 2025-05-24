@@ -1,6 +1,6 @@
-use std::{collections::HashMap, convert::Infallible, str::FromStr, sync::{Arc, LazyLock, Mutex, Weak}};
+use std::{collections::HashMap, convert::Infallible, path, str::FromStr, sync::{Arc, LazyLock, Mutex, Weak}};
 
-use super::{file_tag::tag_file, fs_mon::{FSEvent, FSEventIter}};
+use super::{file_tag::{get_tag, tag_file}, fs_mon::{FSEvent, FSEventIter}};
 
 type FileTrackersMap = HashMap<String, FileTracker>;
 type DirTrackersMap = HashMap<String, Weak<Mutex<DirTracker>>>;
@@ -48,6 +48,23 @@ fn get_relative_path(base: &str, path: &str) -> Result<String, Error> {
     }
 }
 
+fn check_potential_path(base: &str, partial_path: &str) ->
+    Result<(String, String), Error> {
+    let full_path: String = 'full: {
+        if partial_path.is_empty() {
+            break 'full base.into();
+        }
+        let partial_path = std::path::PathBuf::from_str(partial_path)?;
+        let base = std::path::PathBuf::from_str(base)?;
+
+        let full_path = base.join(partial_path);
+        let full_path = full_path.to_str().ok_or(Error)?;
+        full_path.into()
+    };
+    let tag = get_tag(&full_path).ok_or(Error)?;
+    Ok((tag, full_path.into()))
+}
+
 impl FileTracker {
     pub fn update_state(&mut self) {
         let dir_tracker = &*self.dir_tracker.lock().unwrap();
@@ -61,6 +78,45 @@ impl FileTracker {
                                 id: id.to_owned(),
                                 partial_path: relative
                             };
+                        }
+                    }
+                }
+                FSEvent::FileRenamedNew(path) => {
+                    if let FileTrackerState::Renaming { id, partial_path } = &self.tracker_state {
+                        let tag = check_potential_path(path, partial_path);
+                        if let Ok((tag, path)) = tag {
+                            if id.eq(&tag) {
+                                self.tracker_state =
+                                    FileTrackerState::Certain { 
+                                        id: id.to_owned(),
+                                        path
+                                    };
+                            }
+                        }
+                    }
+                }
+                FSEvent::FileRemoved(old_path) => {
+                    if let FileTrackerState::Certain { id, path } = &self.tracker_state {
+                        let res = get_relative_path(old_path, path);
+                        if let Ok(relative) = res {
+                            self.tracker_state = FileTrackerState::Moving {
+                                id: id.to_owned(),
+                                partial_path: relative
+                            };
+                        }
+                    }
+                }
+                FSEvent::FileAdded(path) => {
+                    if let FileTrackerState::Moving { id, partial_path } = &self.tracker_state {
+                        let tag = check_potential_path(path, partial_path);
+                        if let Ok((tag, path)) = tag {
+                            if id.eq(&tag) {
+                                self.tracker_state =
+                                    FileTrackerState::Certain { 
+                                        id: id.to_owned(),
+                                        path
+                                    };
+                            }
                         }
                     }
                 }
@@ -80,11 +136,9 @@ pub enum FileTrackerState {
         id: String,
         partial_path: String
     },
-    Uncertain {
-        id: String
-    },
-    Lost {
-        id: String
+    Moving {
+        id: String,
+        partial_path: String
     }
 }
 

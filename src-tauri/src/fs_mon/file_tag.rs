@@ -46,7 +46,7 @@ pub fn get_tag(file: &str) -> Option<String> {
     let res = std::fs::read(file);
     match res {
         Ok(res) => {
-            let uuid = String::from_utf8(res).unwrap();
+            let uuid = String::from_utf8(res).ok()?;
             Some(uuid)
         }
         Err(_) => {
