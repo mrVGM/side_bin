@@ -11,7 +11,6 @@
 namespace
 {
     std::string _lastError;
-    std::queue<Blocker*> _scheduler;
 	std::map<std::string, DirMonitor*> _monitors;
 }
 
@@ -73,7 +72,7 @@ bool Boot(const char* dir)
     bool res = true;
     try
     {
-		DirMonitor* newMonitor = new DirMonitor(dirWide.c_str(), _scheduler);
+		DirMonitor* newMonitor = new DirMonitor(dirWide.c_str());
 		_monitors[dir] = newMonitor;
     }
     catch (std::string err)

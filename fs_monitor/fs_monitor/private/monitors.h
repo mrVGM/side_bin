@@ -14,7 +14,7 @@ private:
 
     std::queue<FileSystemEvent> _fsEvents;
 
-    std::queue<Blocker*>& _scheduler;
+    std::queue<Blocker*> _scheduler;
 
     Blocker _blocker;
     std::variant<void*, CoroutinePlayer> _player;
@@ -24,7 +24,7 @@ private:
     std::string _error;
 
 public:
-    DirMonitor(const wchar_t* dir, std::queue<Blocker*>& scheduler);
+    DirMonitor(const wchar_t* dir);
     ~DirMonitor();
 
     void Tick();

@@ -111,8 +111,7 @@ Coroutine DirMonitor::StartMonitoring()
     }
 }
 
-DirMonitor::DirMonitor(const wchar_t* dir, std::queue<Blocker*>& scheduler) :
-    _scheduler(scheduler)
+DirMonitor::DirMonitor(const wchar_t* dir)
 {
 	_hDir = CreateFileW(
         dir,
