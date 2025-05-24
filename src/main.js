@@ -64,10 +64,20 @@ async function registerFile(elem) {
             ++age;
         }
     }
-    fileCallbacks.push(async () => {
-        console.log("Unregister!!!");
-        await monitorCommand("unregister", fileId);
+
+    await unregister(fileId);
+    elem.classList.remove("item-full");
+}
+
+async function unregister(id) {
+    let res = await new Promise(resolve => {
+        fileCallbacks.push(async () => {
+            const response = await monitorCommand("unregister", id);
+            resolve(response);
+        });
     });
+
+    return res;
 }
 
 async function mainTick() {
