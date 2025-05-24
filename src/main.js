@@ -21,7 +21,9 @@ async function monitorCommand(action, file) {
         file
     });
 
-    console.log("Response from Rust: ", response);
+    console.log(response);
+    response = JSON.parse(response);
+
     return response;
 }
 
@@ -29,28 +31,40 @@ let fileCallbacks = [];
 
 async function registerFile(elem) {
     const file = elem.storedFile;
-    const fileId = await new Promise(async resolve => {
+    const fileIdObj = await new Promise(async resolve => {
         async function task() {
             let fileId = await monitorCommand("register", file);
             resolve(fileId);
         }
         fileCallbacks.push(task);
     });
-
+    const fileId = fileIdObj.id;
+    
     console.log("file registered as", fileId);
 
+    let age = 0;
     while (elem.storedFile) {
         const state = await new Promise(resolve => {
             async function task() {
-                await monitorCommand("update", fileId);
-                resolve();
+                let state = await monitorCommand("update", fileId);
+                resolve(state);
             }
             fileCallbacks.push(task);
         });
-        console.log(state);
+        if (state.Certain) {
+            age = 0;
+            console.log("Certain");
+        }
+        else {
+            if (age > 3) {
+                elem.storedFile = undefined;
+            }
+            console.log(state, age);
+            ++age;
+        }
     }
     fileCallbacks.push(async () => {
-        await monitorCommand("unregister", file);
+        await monitorCommand("unregister", fileId);
     });
 }
 

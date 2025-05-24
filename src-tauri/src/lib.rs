@@ -17,7 +17,16 @@ fn monitor_command(action: &str, file: &str) -> String {
         }
         "register" => {
             let file_id = fs_mon::trackers::register_file(file);
-            return file_id;
+            let file_id = json!({
+                "id": file_id
+            });
+            return file_id.to_string();
+        }
+        "unregister" => {
+            fs_mon::trackers::unregister_file(file);
+            return json!({
+                "unregistered": file
+            }).to_string();
         }
         "update" => {
             let state = get_tracker_state(file);
@@ -33,7 +42,7 @@ fn monitor_command(action: &str, file: &str) -> String {
         }
         _ => {}
     }
-    "dummy".into()
+    "{}".into()
 }
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/

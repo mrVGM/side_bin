@@ -150,6 +150,11 @@ fn get_volume_label(file: &str) -> String {
     file.to_str().unwrap().into()
 }
 
+pub fn unregister_file(file: &str) {
+    let trackers = &mut *(*FILE_TRACKERS).lock().unwrap();
+    trackers.remove(file);
+}
+
 pub fn register_file(file: &str) -> String {
     let trackers = &mut *(*FILE_TRACKERS).lock().unwrap();
     let file_id = tag_file(file);
