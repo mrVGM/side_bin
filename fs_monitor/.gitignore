@@ -1,4 +1,5 @@
 # C++
-/out
-/ready
+out
+ready
 compile_commands.json
+.cache
