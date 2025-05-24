@@ -54,6 +54,7 @@ async function registerFile(elem) {
         if (state.Certain) {
             age = 0;
             console.log("Certain");
+            elem.storedFile = state.Certain.path;
         }
         else {
             if (age > 3) {
@@ -64,6 +65,7 @@ async function registerFile(elem) {
         }
     }
     fileCallbacks.push(async () => {
+        console.log("Unregister!!!");
         await monitorCommand("unregister", fileId);
     });
 }
@@ -181,7 +183,6 @@ window.addEventListener("DOMContentLoaded", async () => {
                 icon: "",
                 mode: "move"
             });
-            item.storedFile = undefined;
         });
     });
 
