@@ -32,16 +32,26 @@ body {
 .item {
     width: 50px;
     height: 50px;
-    background-color: #0fff0f;
+    border: 2px solid #ccc;
+
+    background-color: #f9f9f9;
+    border-color: #bbb;
     margin: 3px
 }
 
 .item-full {
-    background-color: #ff0f0f;
+    background-image: url('assets/file_icon.svg');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #e0ffe0;
+    border-color: #4caf50;
 }
 
 .item-hovered {
-    background-color: #ffff0f;
+    border-color: #2196f3;
+    box-shadow: 0 0 8px rgba(33, 150, 243, 0.5);
+    cursor: pointer;
 }
 
 .container {
