@@ -49,8 +49,7 @@ pub fn get_tag(file: &str) -> Option<String> {
             let uuid = String::from_utf8(res).unwrap();
             Some(uuid)
         }
-        Err(e) => {
-            dbg!(e);
+        Err(_) => {
             None
         }
     }

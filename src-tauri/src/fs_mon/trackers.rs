@@ -1,4 +1,4 @@
-use std::{collections::HashMap, str::FromStr, sync::{Arc, LazyLock, Mutex, Weak}};
+use std::{collections::HashMap, convert::Infallible, str::FromStr, sync::{Arc, LazyLock, Mutex, Weak}};
 
 use super::{file_tag::tag_file, fs_mon::{FSEvent, FSEventIter}};
 
@@ -14,6 +14,7 @@ static DIR_TRACKERS: LazyLock<Mutex<DirTrackersMap>> = LazyLock::new(|| -> Mutex
 });
 
 struct DirTracker {
+    root: String,
     iter: FSEventIter,
     events: Vec<FSEvent>
 }
@@ -23,12 +24,48 @@ struct FileTracker {
     tracker_state: FileTrackerState
 }
 
+#[derive(Debug)]
+struct Error;
+impl From<Infallible> for Error {
+    fn from(_: Infallible) -> Self {
+        Error
+    }
+}
+
+fn get_relative_path(base: &str, path: &str) -> Result<String, Error> {
+    let path = std::path::PathBuf::from_str(path)?;
+    let base = std::path::PathBuf::from_str(base)?;
+
+    let relative = path.strip_prefix(base);
+    match relative {
+        Ok(relative) => {
+            let relative = relative.to_str().ok_or(Error)?;
+            return Ok(relative.into());
+        }
+        Err(_) => {
+            Err(Error)
+        }
+    }
+}
+
 impl FileTracker {
     pub fn update_state(&mut self) {
-        println!("file tracker state update");
         let dir_tracker = &*self.dir_tracker.lock().unwrap();
         for event in dir_tracker.events.iter() {
-            dbg!(event);
+            match event {
+                FSEvent::FileRenamedOld(old_path) => {
+                    if let FileTrackerState::Certain { id, path } = &self.tracker_state {
+                        let res = get_relative_path(old_path, path);
+                        if let Ok(relative) = res {
+                            self.tracker_state = FileTrackerState::Renaming {
+                                id: id.to_owned(),
+                                partial_path: relative
+                            };
+                        }
+                    }
+                }
+                _ => {}
+            }
         }
     }
 }
@@ -38,6 +75,10 @@ pub enum FileTrackerState {
     Certain {
         id: String,
         path: String
+    },
+    Renaming {
+        id: String,
+        partial_path: String
     },
     Uncertain {
         id: String
@@ -81,10 +122,11 @@ pub fn register_file(file: &str) -> String {
         let dir_tracker = Arc::new(
             Mutex::new(
                 DirTracker {
-                iter: fs_event_iter,
-                events: vec![]
-            })
-        );
+                    root: volume.to_owned(),
+                    iter: fs_event_iter,
+                    events: vec![]
+                }));
+
         let weak_tracker = Arc::downgrade(&dir_tracker);
         dir_trackers.insert(volume, weak_tracker);
 
@@ -118,6 +160,33 @@ pub fn tick() {
             tracker.events.clear();
             tracker.iter.tick().unwrap();
             while let Some(event) = tracker.iter.get_event() {
+                let event = match event {
+                    FSEvent::FileRenamedOld(name) => {
+                        let mut full_path = tracker.root.to_owned();
+                        full_path.push_str(&name);
+                        FSEvent::FileRenamedOld(full_path.into())
+                    }
+                    FSEvent::FileRenamedNew(name) => {
+                        let mut full_path = tracker.root.to_owned();
+                        full_path.push_str(&name);
+                        FSEvent::FileRenamedNew(full_path.into())
+                    }
+                    FSEvent::FileAdded(name) => {
+                        let mut full_path = tracker.root.to_owned();
+                        full_path.push_str(&name);
+                        FSEvent::FileAdded(full_path.into())
+                    }
+                    FSEvent::FileRemoved(name) => {
+                        let mut full_path = tracker.root.to_owned();
+                        full_path.push_str(&name);
+                        FSEvent::FileRemoved(full_path.into())
+                    }
+                    FSEvent::FileModified(name) => {
+                        let mut full_path = tracker.root.to_owned();
+                        full_path.push_str(&name);
+                        FSEvent::FileModified(full_path.into())
+                    }
+                };
                 tracker.events.push(event);
             }
         }
