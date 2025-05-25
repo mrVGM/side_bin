@@ -14,7 +14,8 @@
         "alwaysOnTop": true,
         "title": "temp_drop",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "skipTaskbar": true
       }
     ],
     "security": {
