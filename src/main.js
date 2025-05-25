@@ -6,6 +6,15 @@ function getWebCurrentWebview() {
     return wnd;
 }
 
+async function getFileTag(file) {
+    let response = await invoke("get_file_tag", {
+        file: file
+    });
+
+    let responseJSON = JSON.parse(response);
+    return responseJSON;
+}
+
 async function resizeWin(x, y, w, h) {
     await invoke("resize_win", { 
         x: x,
@@ -26,6 +35,7 @@ async function monitorCommand(action, file) {
     return response;
 }
 
+const droppedFiles = {};
 let fileCallbacks = [];
 
 async function registerFile(elem) {
@@ -38,6 +48,7 @@ async function registerFile(elem) {
         fileCallbacks.push(task);
     });
     const fileId = fileIdObj.id;
+    droppedFiles[fileId] = true;
 
     let stop = false;
     elem.closeFunc = () => {
@@ -78,6 +89,7 @@ async function unregister(id) {
             resolve(response);
         });
     });
+    delete droppedFiles[id];
 
     return res;
 }
@@ -153,7 +165,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             item.closeFunc = undefined;
         });
 
-        dropSlots.push((payload) => {
+        dropSlots.push(async payload => {
             const rect = item.getBoundingClientRect();
             const pos = payload.position;
             const paths = payload.paths;
@@ -165,6 +177,12 @@ window.addEventListener("DOMContentLoaded", async () => {
             if (item.storedFile) {
                 return;
             }
+
+            let resp = await getFileTag(file);
+            if (resp.valid && droppedFiles[resp.tag]) {
+                return;
+            }
+
             if (
                 rect.x <= pos.x &&
                 pos.x <= rect.x + rect.width &&
@@ -217,6 +235,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     const unlisten = await webview
         .getCurrentWebview()
         .onDragDropEvent((event) => {
+
         if (event.payload.type === 'over') {
             expandWindow();
             hoverSlots.forEach(slot => {
@@ -224,12 +243,21 @@ window.addEventListener("DOMContentLoaded", async () => {
             });
         } else if (event.payload.type === 'drop') {
             droppedFile = event.payload.paths[0];
-            dropSlots.forEach(slot => {
-                slot(event.payload);
-            });
-            hoverSlots.forEach(slot => {
-                slot();
-            });
+            async function checkFileAndDrop() {
+                console.log("drop");
+                let response = await getFileTag(droppedFile);
+                if (response.valid) {
+                    const tag = response.tag;
+                    console.log("tag", tag);
+                }
+                dropSlots.forEach(slot => {
+                    slot(event.payload);
+                });
+                hoverSlots.forEach(slot => {
+                    slot();
+                });
+            }
+            checkFileAndDrop();
         } else {
             collapseWindow();
         }

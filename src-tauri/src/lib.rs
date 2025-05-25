@@ -9,6 +9,26 @@ mod fs_mon {
 }
 
 #[tauri::command]
+fn get_file_tag(file: &str) -> String {
+    let tag = get_tag(file);
+    let response = match tag {
+        Some(tag) => {
+            json!({
+                "valid": true,
+                "tag": tag
+            })
+        }
+        None => {
+            json!({
+                "valid": false
+            })
+        }
+    };
+
+    response.to_string()
+}
+
+#[tauri::command]
 fn monitor_command(action: &str, file: &str) -> String {
     match action {
         "tick" => {
@@ -67,7 +87,7 @@ pub fn run() {
     tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_drag::init())
-    .invoke_handler(tauri::generate_handler![resize_win, monitor_command])
+    .invoke_handler(tauri::generate_handler![resize_win, monitor_command, get_file_tag])
     .run(tauri::generate_context!())
     .unwrap();
 }
