@@ -1,9 +1,14 @@
 const { invoke } = window.__TAURI__.core;
+console.log(window.__TAURI__);
 
 function getWebCurrentWebview() {
     const webViewWindow = window.__TAURI__.webViewWindow;
     const wnd = webViewWindow.getWebCurrentWebviewWindow();
     return wnd;
+}
+
+async function exitApp() {
+    await invoke("exit_app", { });
 }
 
 async function getFileTag(file) {
@@ -116,7 +121,35 @@ async function mainTick() {
     }
 }
 
+async function setupTray() {
+    const { TrayIcon } = window.__TAURI__.tray;
+    const { defaultWindowIcon } = window.__TAURI__.app;
+    const { Menu } = window.__TAURI__.menu;
+
+    const menu = await Menu.new({
+        items: [
+            {
+                id: 'quit',
+                text: 'Quit',
+                action: () => {
+                    exitApp();
+                }
+            }
+        ]
+    });
+
+    let options = {
+        menu,
+        menuOnLeftClick: true,
+        icon: await defaultWindowIcon(),
+    };
+    
+    await TrayIcon.new(options);
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
+    await setupTray();
+
     const mainElement = document.querySelector("#main");
     mainTick();
 

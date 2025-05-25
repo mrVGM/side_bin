@@ -9,6 +9,11 @@ mod fs_mon {
 }
 
 #[tauri::command]
+fn exit_app(app: AppHandle) {
+    app.exit(0);
+}
+
+#[tauri::command]
 fn get_file_tag(file: &str) -> String {
     let tag = get_tag(file);
     let response = match tag {
@@ -87,7 +92,13 @@ pub fn run() {
     tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_drag::init())
-    .invoke_handler(tauri::generate_handler![resize_win, monitor_command, get_file_tag])
+    .invoke_handler(
+        tauri::generate_handler![
+            resize_win,
+            monitor_command,
+            get_file_tag,
+            exit_app
+        ])
     .run(tauri::generate_context!())
     .unwrap();
 }
