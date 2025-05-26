@@ -159,6 +159,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     const config = await readConfig();
     console.log(config);
 
+    if (!config.alignment) {
+        config.alignment = "vertical";
+    }
     if (!config.anchor) {
         config.anchor = [0, 0];
     }
@@ -173,6 +176,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     const mainElement = document.querySelector("#main");
+    if (config.alignment === "vertical") {
+        mainElement.classList.add("container-vertical");
+    }
+    
     mainTick();
 
     let state;
