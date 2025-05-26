@@ -1,4 +1,4 @@
-use fs_mon::{file_tag::{get_tag, tag_file}, trackers::{self, get_tracker_state, tick}};
+use fs_mon::{file_tag::get_tag, trackers::{get_tracker_state, tick}};
 use serde_json::json;
 use tauri::{AppHandle, Manager};
 

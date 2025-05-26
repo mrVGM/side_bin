@@ -156,7 +156,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     let state;
     function expandWindow() {
         if (state !== "expanded") {
-            resizeWin(-20, 300, 80, 250);
+            resizeWin(0, 0, 80, 250);
         }
         state = "expanded";
         mainElement.style.display = "";
@@ -164,12 +164,14 @@ window.addEventListener("DOMContentLoaded", async () => {
     function collapseWindow() {
         if (state !== "collapsed")
         {
-            resizeWin(-20, 300, 30, 250);
+            resizeWin(0, 0, 30, 30);
         }
         state = "collapsed";
         mainElement.classList.remove("main-hidden");
         mainElement.style.display = "none";
     }
+
+    collapseWindow();
 
     let droppedFile = undefined;
     const item1 = document.querySelector("#slot1");
