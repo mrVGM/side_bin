@@ -166,10 +166,10 @@ window.addEventListener("DOMContentLoaded", async () => {
         config.position = [0, 0];
     }
     if (!config.expanded) {
-        config.expanded = [300, 300];
+        config.expanded = [100, 300];
     }
-    if (!config.colapsed) {
-        config.collapsed = [100, 100];
+    if (!config.collapsed) {
+        config.collapsed = [20, 20];
     }
 
     const mainElement = document.querySelector("#main");
