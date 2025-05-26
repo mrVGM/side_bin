@@ -34,3 +34,32 @@ Tauri makes SideBin:
 - ✅ Easy to update and maintain
 
 ---
+
+## 🛠️ Build from Source
+
+To build **SideBin** from source, follow these steps:
+
+### 1. Build the `fs_monitor` static library (C++)
+
+- Ensure you have **CMake** and **Clang** installed.
+- Open a command prompt and navigate to the `fs_monitor` directory.
+- Run the `build.bat` script to compile the library.
+- After a successful build, copy `fs_monitor.lib` from the `ready` folder into `src-tauri\lib`.
+
+### 2. Build the Tauri application
+
+- Make sure you have the following installed:
+  - **Rust**
+  - **Tauri CLI**
+  - A JavaScript runtime (e.g., [Bun](https://bun.sh/))
+
+- From the project root, run:
+
+  ```bash
+  bun install
+  bun run tauri build
+  
+After building, you'll find the compiled application in the `src-tauri/target/release` directory.
+
+---
+
