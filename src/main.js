@@ -11,6 +11,12 @@ async function exitApp() {
     await invoke("exit_app", { });
 }
 
+async function readConfig() {
+    const config = await invoke("read_config", { });
+    const configJSON = JSON.parse(config);
+    return configJSON;
+}
+
 async function getFileTag(file) {
     let response = await invoke("get_file_tag", {
         file: file
@@ -150,13 +156,42 @@ async function setupTray() {
 window.addEventListener("DOMContentLoaded", async () => {
     await setupTray();
 
+    const config = await readConfig();
+    console.log(config);
+
+    if (!config.anchor) {
+        config.anchor = [0, 0];
+    }
+    if (!config.position) {
+        config.position = [0, 0];
+    }
+    if (!config.expanded) {
+        config.expanded = [300, 300];
+    }
+    if (!config.colapsed) {
+        config.collapsed = [100, 100];
+    }
+
     const mainElement = document.querySelector("#main");
     mainTick();
 
     let state;
     function expandWindow() {
         if (state !== "expanded") {
-            resizeWin(0, 0, 80, 250);
+            const size = [config.expanded[0], config.expanded[1]];
+            const offset = [
+                -config.anchor[0] * size[0],
+                -config.anchor[1] * size[1]
+            ];
+            const position = [
+                config.position[0] + offset[0],
+                config.position[1] + offset[1]
+            ];
+            resizeWin(
+                position[0],
+                position[1],
+                size[0],
+                size[1]);
         }
         state = "expanded";
         mainElement.style.display = "";
@@ -164,7 +199,20 @@ window.addEventListener("DOMContentLoaded", async () => {
     function collapseWindow() {
         if (state !== "collapsed")
         {
-            resizeWin(0, 0, 30, 30);
+            const size = [config.collapsed[0], config.collapsed[1]];
+            const offset = [
+                -config.anchor[0] * size[0],
+                -config.anchor[1] * size[1]
+            ];
+            const position = [
+                config.position[0] + offset[0],
+                config.position[1] + offset[1]
+            ];
+            resizeWin(
+                position[0],
+                position[1],
+                size[0],
+                size[1]);
         }
         state = "collapsed";
         mainElement.classList.remove("main-hidden");

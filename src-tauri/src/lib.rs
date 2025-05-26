@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use fs_mon::{file_tag::get_tag, trackers::{get_tracker_state, tick}};
 use serde_json::json;
 use tauri::{AppHandle, Manager};
@@ -11,6 +13,26 @@ mod fs_mon {
 #[tauri::command]
 fn exit_app(app: AppHandle) {
     app.exit(0);
+}
+
+fn read_config_internal() -> Result<String, ()> {
+    let config =
+        std::path::PathBuf::from_str("config.json")
+        .map_err(|_| ())?;
+
+    let content = std::fs::read_to_string(config).map_err(|_| ())?;
+    let _ = serde_json::Value::from_str(&content).map_err(|_| ())?;
+
+    return Ok(content);
+}
+
+#[tauri::command]
+fn read_config() -> String {
+    let content = read_config_internal();
+    match content {
+        Ok(s) => s,
+        Err(()) => "{}".into()
+    }
 }
 
 #[tauri::command]
@@ -97,6 +119,7 @@ pub fn run() {
             resize_win,
             monitor_command,
             get_file_tag,
+            read_config,
             exit_app
         ])
     .run(tauri::generate_context!())
