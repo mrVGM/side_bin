@@ -34,7 +34,7 @@ pub fn tag_file(file: &str) -> String {
     let uuid = Uuid::new_v1(Timestamp::now(clock), &mac_address.bytes());
     let uuid = format!("{}", uuid);
 
-    let file = file.to_owned() + ":dd_tag";
+    let file = file.to_owned() + ":sb_tag";
     let file = std::path::PathBuf::from_str(&file).unwrap();
     std::fs::write(file, &uuid).unwrap();
 
@@ -42,7 +42,7 @@ pub fn tag_file(file: &str) -> String {
 }
 
 pub fn get_tag(file: &str) -> Option<String> {
-    let file = file.to_owned() + ":dd_tag";
+    let file = file.to_owned() + ":sb_tag";
     let res = std::fs::read(file);
     match res {
         Ok(res) => {

@@ -267,6 +267,9 @@ window.addEventListener("DOMContentLoaded", async () => {
             if (item.storedFile) {
                 return;
             }
+            if (file.startsWith("\\\\")) {
+                return;
+            }
 
             let resp = await getFileTag(file);
             if (resp.valid && droppedFiles[resp.tag]) {
