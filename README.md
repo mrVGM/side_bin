@@ -35,6 +35,30 @@ Tauri makes SideBin:
 
 ---
 
+## 🛠️ Configuration
+
+You can customize **SideBin's** appearance and behavior through a `config.json` file placed in the same folder as the application executable. This file lets you fine-tune how the SideBin window behaves on your screen. Configurable options include:
+
+- **Window position** – set the X and Y coordinates of the window
+- **Anchor point** – determine which corner or edge the window is anchored to
+- **Expanded size** – define the width and height when SideBin is fully open
+- **Collapsed size** – set the dimensions when the window is minimized
+- **Slot orientation** – choose whether file slots are laid out horizontally or vertically
+
+Here’s an example `config.json`:
+
+```json
+{
+    "alignment": "vertical",
+    "anchor": [0, 0],
+    "position": [0, 0],
+    "expanded": [100, 300],
+    "collapsed": [20, 20]
+}
+```
+
+---
+
 ## 🛠️ Build from Source
 
 To build **SideBin** from source, follow these steps:
