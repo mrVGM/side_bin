@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "temp_drop",
+  "productName": "side_bin",
   "version": "0.1.0",
   "identifier": "com.temp.drop.app",
   "build": {
@@ -12,7 +12,7 @@
       {
         "decorations": false,
         "alwaysOnTop": true,
-        "title": "temp_drop",
+        "title": "side_bin",
         "width": 800,
         "height": 600,
         "skipTaskbar": true

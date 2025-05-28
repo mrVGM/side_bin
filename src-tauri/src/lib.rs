@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::{env, panic};
 
 use fs_mon::{file_tag::get_tag, trackers::{get_tracker_state, tick}};
 use serde_json::json;
@@ -111,6 +112,13 @@ fn resize_win(app: AppHandle, x: i32, y: i32, w: u32, h: u32) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    env::set_var("RUST_BACKTRACE", "1");
+    panic::set_hook(Box::new(|_| {
+        let backtrace = std::backtrace::Backtrace::capture();
+        let info = format!("{}", backtrace.to_string());
+        let _ = std::fs::write("crash_dump.dmp", info);
+    }));
+
     tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_drag::init())

@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 pub enum FileSystemEvent {}
 
 unsafe extern "C" {
@@ -119,14 +117,4 @@ impl Drop for FSEventIter {
     }
 }
 
-pub fn test() -> std::io::Result<()> {
 
-    let monitor = FSEventIter::new("C:\\")?;
-    loop {
-        monitor.tick()?;
-        while let Some(e) = monitor.get_event() {
-            dbg!(e);
-        }
-    }
-    return Ok(());
-}

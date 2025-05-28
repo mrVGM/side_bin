@@ -1,4 +1,4 @@
-use std::{collections::HashMap, convert::Infallible, path, str::FromStr, sync::{Arc, LazyLock, Mutex, Weak}};
+use std::{collections::HashMap, convert::Infallible, str::FromStr, sync::{Arc, LazyLock, Mutex, Weak}};
 
 use super::{file_tag::{get_tag, tag_file}, fs_mon::{FSEvent, FSEventIter}};
 
