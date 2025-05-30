@@ -32,22 +32,23 @@ body {
 }
 
 .slot-overlay {
+    display: flex;
+    flex-direction: column;
     position: relative;
     flex: 1;
 }
 
 .name {
-    position: absolute;
-    bottom: 0%;
-
     color: #000000;
     word-break: break-all;
+
+    flex: 1;
 }
 
 .close {
     position: absolute;
-    width: 50%;
-    height: 50%;
+    width: 25%;
+    height: 25%;
 
     background-image: url('assets/close.svg');
     background-size: contain;
@@ -68,11 +69,16 @@ body {
     display: flex;
 }
 
-.item-full {
+.item-icon {
     background-image: url('assets/file_icon.svg');
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
+
+    flex: 3;
+}
+
+.item-full {
     background-color: #e0ffe0;
     border-color: #4caf50;
 }

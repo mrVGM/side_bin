@@ -62,6 +62,7 @@ let fileCallbacks = [];
 async function registerFile(elem) {
     const overlay = elem.querySelector("#overlay");
     const name = elem.querySelector("#name");
+    const itemIcon = elem.querySelector("#item-icon");
 
     const file = elem.storedFile;
     const icon = await getIcon(file);
@@ -75,7 +76,7 @@ async function registerFile(elem) {
             }
         );
         const imageUrl = URL.createObjectURL(image);
-        elem.style.backgroundImage = `url('${imageUrl}')`;
+        itemIcon.style.backgroundImage = `url('${imageUrl}')`;
     }
 
     const fileIdObj = await new Promise(async resolve => {
@@ -111,6 +112,7 @@ async function registerFile(elem) {
                 let fileName = elem.storedFile.substring(lastSlash + 1);
                 if (fileName.length > 30) {
                     fileName = fileName.substring(fileName.length - 30);
+                    fileName = "..." + fileName;
                 }
                 name.innerHTML = fileName;
             }
