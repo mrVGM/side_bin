@@ -115,6 +115,7 @@ async function registerFile(elem) {
     await unregister(fileId);
     elem.classList.remove("item-full");
     elem.close.style.display = "none"
+    elem.style.backgroundImage = "";
 }
 
 async function unregister(id) {
