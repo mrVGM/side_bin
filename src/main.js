@@ -60,6 +60,9 @@ const droppedFiles = {};
 let fileCallbacks = [];
 
 async function registerFile(elem) {
+    const overlay = elem.querySelector("#overlay");
+    const name = elem.querySelector("#name");
+
     const file = elem.storedFile;
     const icon = await getIcon(file);
 
@@ -102,6 +105,15 @@ async function registerFile(elem) {
         if (state.Certain) {
             age = 0;
             elem.storedFile = state.Certain.path;
+            const lastSlash = elem.storedFile.lastIndexOf("\\");
+            if (lastSlash >= 0)
+            {
+                let fileName = elem.storedFile.substring(lastSlash + 1);
+                if (fileName.length > 30) {
+                    fileName = fileName.substring(fileName.length - 30);
+                }
+                name.innerHTML = fileName;
+            }
         }
         else {
             if (age > 3) {
@@ -114,7 +126,7 @@ async function registerFile(elem) {
     elem.storedFile = undefined;
     await unregister(fileId);
     elem.classList.remove("item-full");
-    elem.close.style.display = "none"
+    overlay.style.display = "none"
     elem.style.backgroundImage = "";
 }
 
@@ -271,7 +283,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     const hoverSlots = [];
 
     items.forEach(item => {
-        item.close.style.display = "none";
+        let overlay = item.querySelector("#overlay");
+        overlay.style.display = "none";
         item.closeFunc = undefined;
         item.close.addEventListener("mousedown", () => {
             if (item.closeFunc) {
@@ -309,7 +322,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 item.storedFile = file;
                 registerFile(item);
                 item.classList.add("item-full");
-                item.close.style.display = "";
+                overlay.style.display = "";
             }
         });
 
