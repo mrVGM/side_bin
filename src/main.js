@@ -207,7 +207,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     mainTick();
 
     let state;
-    function expandWindow() {
+    async function expandWindow() {
         if (state !== "expanded") {
             const size = [config.expanded[0], config.expanded[1]];
             const offset = [
@@ -218,7 +218,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 config.position[0] + offset[0],
                 config.position[1] + offset[1]
             ];
-            resizeWin(
+            await resizeWin(
                 position[0],
                 position[1],
                 size[0],
@@ -227,7 +227,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         state = "expanded";
         mainElement.style.display = "";
     }
-    function collapseWindow() {
+    async function collapseWindow() {
         if (state !== "collapsed")
         {
             const size = [config.collapsed[0], config.collapsed[1]];
@@ -239,7 +239,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 config.position[0] + offset[0],
                 config.position[1] + offset[1]
             ];
-            resizeWin(
+            await resizeWin(
                 position[0],
                 position[1],
                 size[0],
