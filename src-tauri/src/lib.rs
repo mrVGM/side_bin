@@ -1,7 +1,9 @@
+use std::io::{BufWriter, Cursor};
 use std::str::FromStr;
 use std::{env, panic};
 
 use fs_mon::{file_tag::get_tag, trackers::{get_tracker_state, tick}};
+use image::ImageEncoder;
 use serde_json::json;
 use tauri::{AppHandle, Manager};
 
@@ -110,6 +112,40 @@ fn resize_win(app: AppHandle, x: i32, y: i32, w: u32, h: u32) {
     window.set_size(s).unwrap();
 }
 
+
+#[tauri::command]
+fn get_file_icon(file: &str) -> String {
+    let res = json!({
+        "valid": false
+    }).to_string();
+
+    let icon = file_icon_provider::get_file_icon(file, 32);
+    let icon = match icon {
+        Ok(icon) => icon,
+        Err(_) => {
+            return res;
+        }
+    };
+
+    let mut png_data = Vec::new();
+    let writer = BufWriter::new(Cursor::new(&mut png_data));
+    let encoder = image::codecs::png::PngEncoder::new(writer);
+    let write_res = encoder.write_image(
+        &icon.pixels,
+        icon.width,
+        icon.height,
+        image::ExtendedColorType::Rgba8);
+
+    if let Err(_) = write_res {
+        return res;
+    }
+
+    json!({
+        "valid": true,
+        "data": png_data
+    }).to_string()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     env::set_var("RUST_BACKTRACE", "1");
@@ -128,6 +164,7 @@ pub fn run() {
             monitor_command,
             get_file_tag,
             read_config,
+            get_file_icon,
             exit_app
         ])
     .run(tauri::generate_context!())

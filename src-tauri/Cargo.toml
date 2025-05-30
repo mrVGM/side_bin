@@ -25,6 +25,8 @@ serde_json = "1"
 tauri-plugin-drag = "2.1.0"
 uuid = { version = "1.17.0", features = ["v1"] }
 mac_address = "1.1.8"
+file_icon_provider = "0.4.0"
+image = "0.25.6"
 
 [patch.crates-io]
 drag = { git = "https://github.com/mrVGM/drag-rs.git", branch = "combined_move_and_copy_effects", package = "drag" }

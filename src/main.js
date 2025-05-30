@@ -46,11 +46,35 @@ async function monitorCommand(action, file) {
     return response;
 }
 
+async function getIcon(file) {
+    let response = await invoke("get_file_icon", {
+        file
+    });
+
+    response = JSON.parse(response);
+
+    return response;
+}
+
 const droppedFiles = {};
 let fileCallbacks = [];
 
 async function registerFile(elem) {
     const file = elem.storedFile;
+    const icon = await getIcon(file);
+
+    if (icon.valid) {
+        const imageData = new Uint8Array(icon.data);
+        const image = new Blob(
+            [imageData],
+            {
+                type: 'image/png'
+            }
+        );
+        const imageUrl = URL.createObjectURL(image);
+        elem.style.backgroundImage = `url('${imageUrl}')`;
+    }
+
     const fileIdObj = await new Promise(async resolve => {
         async function task() {
             let fileId = await monitorCommand("register", file);
