@@ -1,4 +1,5 @@
 use std::io::{BufWriter, Cursor};
+use std::process::Command;
 use std::str::FromStr;
 use std::{env, panic};
 
@@ -16,6 +17,41 @@ mod fs_mon {
 #[tauri::command]
 fn exit_app(app: AppHandle) {
     app.exit(0);
+}
+
+#[tauri::command]
+fn open_file_directory(file: String) {
+    let path = {
+        let path = std::path::PathBuf::from_str(&file);
+        match path {
+            Ok(path) => {
+                path
+            }
+            Err(_) => {
+                return;
+            }
+        }
+    };
+
+    let parent_dir = 'parent_path: {
+        if let Some(parent_path) = path.parent() {
+            break 'parent_path parent_path;
+        }
+        return;
+    };
+
+    let parent_dir_str = 'parent_dir_str: {
+        if let Some(parent_path) = parent_dir.to_str() {
+            break 'parent_dir_str parent_path;
+        }
+        return;
+    };
+
+    let _ = Command::new("cmd")
+        .arg("/c")
+        .arg("explorer")
+        .arg(parent_dir_str)
+        .spawn();
 }
 
 fn read_config_internal() -> Result<String, ()> {
@@ -165,6 +201,7 @@ pub fn run() {
             get_file_tag,
             read_config,
             get_file_icon,
+            open_file_directory,
             exit_app
         ])
     .run(tauri::generate_context!())

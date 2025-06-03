@@ -1,5 +1,4 @@
 const { invoke } = window.__TAURI__.core;
-console.log(window.__TAURI__);
 
 function createDOMElement(html) {
     let tmp = document.createElement('template');
@@ -21,6 +20,12 @@ function getWebCurrentWebview() {
 
 async function exitApp() {
     await invoke("exit_app", { });
+}
+
+async function openFileDir(file) {
+    await invoke("open_file_directory", {
+        file
+    });
 }
 
 async function readConfig() {
@@ -208,8 +213,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     await setupTray();
 
     const config = await readConfig();
-    console.log(config);
-
     if (!config.alignment) {
         config.alignment = "vertical";
     }
@@ -314,6 +317,12 @@ window.addEventListener("DOMContentLoaded", async () => {
             item.closeFunc = undefined;
         });
 
+        item.addEventListener("dblclick", () => {
+            if (item.storedFile) {
+                openFileDir(item.storedFile);
+            }
+        });
+
         function hoverSlot(hovered) {
             item.classList.remove("item-hovered");
             if (hovered) {
@@ -378,16 +387,35 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 
     items.forEach(item => {
-        item.addEventListener("mousedown", () => {
+        item.addEventListener("mousedown", async () => {
             if (!item.storedFile) {
                 return;
             }
-            const { startDrag } = window.__TAURI__.drag;
-            startDrag({
-                item: [item.storedFile],
-                icon: "",
-                mode: "move"
+            let mouseupHandler, mousemoveHandler;
+            let shouldDrag = await new Promise(resolve => {
+                mouseupHandler = () => {
+                    resolve(false);
+                };
+                mousemoveHandler = () => {
+                    resolve(true);
+                };
+                item.addEventListener("mouseup", mouseupHandler);
+                item.addEventListener("mousemove", mousemoveHandler);
+                setTimeout(() => {
+                    resolve(true);
+                }, 500);
             });
+            item.removeEventListener("mouseup", mouseupHandler);
+            item.removeEventListener("mousemove", mousemoveHandler);
+
+            if (shouldDrag) {
+                const { startDrag } = window.__TAURI__.drag;
+                startDrag({
+                    item: [item.storedFile],
+                    icon: "",
+                    mode: "move"
+                });
+            }
         });
     });
 
