@@ -1,6 +1,18 @@
 const { invoke } = window.__TAURI__.core;
 console.log(window.__TAURI__);
 
+function createDOMElement(html) {
+    let tmp = document.createElement('template');
+    tmp.innerHTML = html;
+    let elem;
+    tmp.content.childNodes.forEach(x => {
+        if (x.nodeName !== "#text") {
+            elem = x;
+        }
+    });
+    return elem;
+}
+
 function getWebCurrentWebview() {
     const webViewWindow = window.__TAURI__.webViewWindow;
     const wnd = webViewWindow.getWebCurrentWebviewWindow();
@@ -267,19 +279,26 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     collapseWindow();
 
+    const container = document.querySelector("#main");
+    const items = [];
+    for (let i = 0; i < 3; ++i)
+    {
+        let item = createDOMElement(`
+<div class="item">
+    <div class="slot-overlay" id="overlay">
+        <div class="item-icon" id="item-icon"></div>
+        <div class="name" id="name"></div>
+        <div class="close" id="close"></div>
+    </div>
+</div>
+        `);
+        container.appendChild(item);
+        items.push(item);
+        const close = item.querySelector("#close");
+        item.close = close;
+    }
+
     let droppedFile = undefined;
-    const item1 = document.querySelector("#slot1");
-    const item2 = document.querySelector("#slot2");
-    const item3 = document.querySelector("#slot3");
-
-    const close1 = document.querySelector("#close1");
-    const close2 = document.querySelector("#close2");
-    const close3 = document.querySelector("#close3");
-
-    const items = [item1, item2, item3];
-    item1.close = close1;
-    item2.close = close2;
-    item3.close = close3;
 
     const dropSlots = [];
     const hoverSlots = [];
@@ -288,12 +307,19 @@ window.addEventListener("DOMContentLoaded", async () => {
         let overlay = item.querySelector("#overlay");
         overlay.style.display = "none";
         item.closeFunc = undefined;
-        item.close.addEventListener("mousedown", () => {
+        item.close.addEventListener("click", () => {
             if (item.closeFunc) {
                 item.closeFunc();
             }
             item.closeFunc = undefined;
         });
+
+        function hoverSlot(hovered) {
+            item.classList.remove("item-hovered");
+            if (hovered) {
+                item.classList.add("item-hovered");
+            }
+        }
 
         dropSlots.push(async payload => {
             const rect = item.getBoundingClientRect();
@@ -328,9 +354,10 @@ window.addEventListener("DOMContentLoaded", async () => {
             }
         });
 
+
         hoverSlots.push((payload) => {
             if (!payload) {
-                item.classList.remove("item-hovered");
+                hoverSlot(false);
                 return;
             }
             const rect = item.getBoundingClientRect();
@@ -341,11 +368,11 @@ window.addEventListener("DOMContentLoaded", async () => {
                 rect.y <= pos.y &&
                 pos.y <= rect.y + rect.height) {
                 if (!item.storedFile) {
-                    item.classList.add("item-hovered");
+                    hoverSlot(true);
                 }
             }
             else {
-                item.classList.remove("item-hovered");
+                hoverSlot(false);
             }
         });
     });
@@ -377,12 +404,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         } else if (event.payload.type === 'drop') {
             droppedFile = event.payload.paths[0];
             async function checkFileAndDrop() {
-                console.log("drop");
-                let response = await getFileTag(droppedFile);
-                if (response.valid) {
-                    const tag = response.tag;
-                    console.log("tag", tag);
-                }
                 dropSlots.forEach(slot => {
                     slot(event.payload);
                 });
@@ -395,26 +416,19 @@ window.addEventListener("DOMContentLoaded", async () => {
             collapseWindow();
         }
     });
-
-    ["mouseover"].forEach(name => {
-        document.addEventListener(name, (evt) => {
-            if (evt.relatedTarget)
-            {
-                return;
-            }
-            expandWindow();
-        });
+    document.addEventListener("mouseover", (evt) => {
+        if (evt.relatedTarget)
+        {
+            return;
+        }
+        expandWindow();
     });
-
-    ["mouseout"].forEach(name => {
-        document.addEventListener(name, (evt) => {
-            if (evt.relatedTarget)
-            {
-                return;
-            }
-            collapseWindow();
-        });
+    document.addEventListener("mouseout", (evt) => {
+        if (evt.relatedTarget)
+        {
+            return;
+        }
+        collapseWindow();
     });
-
 });
 
