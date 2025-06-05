@@ -111,6 +111,51 @@ async function registerFile(elem) {
         stop = true;
     };
 
+    async function checkFileTag() {
+        const newestTag = await new Promise(resolve => {
+            async function task() {
+                if (!elem.storedFile) {
+                    resolve();
+                    return;
+                }
+                let resp = await getFileTag(elem.storedFile);
+                if (resp.valid) {
+                    resolve(resp.tag);
+                    return;
+                }
+                resolve();
+            }
+            fileCallbacks.push(task);
+        });
+
+        return newestTag === fileId;
+    }
+
+    const tagCheckOk = Symbol("checked");
+    const tagCheckInProgress = Symbol("in progress");
+
+    let tagCheck = tagCheckOk;
+
+    let stopChecks;
+    let tagCheckRoutine = new Promise(resolve => {
+        let goOn = true;
+        stopChecks = () => {
+            goOn = false;
+        };
+
+        function invalidate() {
+            tagCheck = tagCheckInProgress;
+            if (goOn) {
+                setTimeout(invalidate, 1000);
+            }
+            else {
+                resolve();
+            }
+        }
+
+        setTimeout(invalidate, 1000);
+    });
+
     let age = 0;
     while (!stop && elem.storedFile) {
         const state = await new Promise(resolve => {
@@ -120,7 +165,15 @@ async function registerFile(elem) {
             }
             fileCallbacks.push(task);
         });
-        if (state.Certain) {
+
+        if (tagCheck === tagCheckInProgress) {
+            const ok = await checkFileTag();
+            if (ok) {
+                tagCheck = tagCheckOk;
+            }
+        }
+
+        if (state.Certain && tagCheck === tagCheckOk) {
             age = 0;
             elem.storedFile = state.Certain.path;
             const lastSlash = elem.storedFile.lastIndexOf("\\");
@@ -147,6 +200,9 @@ async function registerFile(elem) {
     elem.classList.remove("item-full");
     overlay.style.display = "none"
     elem.style.backgroundImage = "";
+
+    stopChecks();
+    await tagCheckRoutine;
 }
 
 async function unregister(id) {
