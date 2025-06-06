@@ -1,5 +1,4 @@
 use std::io::{BufWriter, Cursor};
-use std::process::Command;
 use std::str::FromStr;
 use std::{env, panic};
 
@@ -171,6 +170,12 @@ pub fn run() {
         let info = format!("{}", backtrace.to_string());
         let _ = std::fs::write("crash_dump.dmp", info);
     }));
+
+    let running_instance = fs_mon::fs_mon::get_running_instance();
+    if running_instance > 0 {
+        println!("App already running at PID: {}", running_instance);
+        return;
+    }
 
     tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())

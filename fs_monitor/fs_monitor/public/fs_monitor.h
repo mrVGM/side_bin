@@ -11,6 +11,8 @@ extern "C"
 		std::string file;
 	};
 
+    DWORD __stdcall GetRunningInstance();
+
 	const char* __stdcall GetLastErr(int* len);
 	int __stdcall GetAction(const FileSystemEvent* event);
 	const char* __stdcall GetFile(const FileSystemEvent* event, int* size);

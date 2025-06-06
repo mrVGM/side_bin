@@ -1,8 +1,8 @@
 #include "fs_monitor.h"
 #include "monitors.h"
 
-#include <queue>
 #include <Windows.h>
+#include <queue>
 #include <variant>
 #include <string>
 #include <iostream>
@@ -10,8 +10,77 @@
 
 namespace
 {
-    std::string _lastError;
-	std::map<std::string, DirMonitor*> _monitors;
+
+std::string _lastError;
+std::map<std::string, DirMonitor*> _monitors;
+
+typedef DWORD SharedData;
+
+class SharedMem
+{
+private:
+    SharedData* m_data = nullptr;
+    HANDLE m_mappedObject = INVALID_HANDLE_VALUE;
+
+public:
+    SharedMem()
+    {
+        m_mappedObject = CreateFileMapping(
+            INVALID_HANDLE_VALUE,
+            nullptr,
+            PAGE_READWRITE,
+            0,
+            sizeof(SharedData),
+            TEXT("f5ffc881-ba69-452d-973e-dd3408932068"));
+
+        bool shouldInit = GetLastError() != ERROR_ALREADY_EXISTS;
+
+        void* tmp = MapViewOfFile(
+            m_mappedObject,
+            FILE_MAP_WRITE,
+            0,
+            0,
+            0);
+
+        m_data = static_cast<SharedData*>(tmp);
+
+        if (shouldInit)
+        {
+            *m_data = 0;
+        }
+    }
+    ~SharedMem()
+    {
+        UnmapViewOfFile(m_data);
+        CloseHandle(m_mappedObject);
+    }
+
+    SharedData& GetSharedData()
+    {
+        return *m_data;
+    }
+};
+
+}
+
+DWORD GetRunningInstance()
+{
+    static std::variant<void*, SharedMem> sharedMem;
+
+    if (sharedMem.index() == 0)
+    {
+        sharedMem.emplace<SharedMem>();
+    }
+
+    SharedMem& mem = std::get<SharedMem>(sharedMem);
+    SharedData& data = mem.GetSharedData();
+    if (data > 0)
+    {
+        return data;
+    }
+
+    mem.GetSharedData() = GetCurrentProcessId();
+    return 0;
 }
 
 std::string toUTF8(const std::wstring& src)

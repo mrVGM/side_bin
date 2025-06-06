@@ -1,6 +1,7 @@
 pub enum FileSystemEvent {}
 
 unsafe extern "C" {
+    fn GetRunningInstance() -> u64;
     fn Boot(dir: *const u8) -> bool;
     fn Tick(dir: *const u8) -> bool;
     fn Peek(dir: *const u8) -> *const FileSystemEvent;
@@ -12,6 +13,7 @@ unsafe extern "C" {
     fn GetFile(event: *const FileSystemEvent, size: *mut i32) -> *const u8;
 }
 
+
 fn get_last_error() -> String {
     unsafe {
         let mut l: i32 = 0;
@@ -20,6 +22,13 @@ fn get_last_error() -> String {
         let err = String::from_utf8_lossy(e);
         err.to_string()
     }
+}
+
+pub fn get_running_instance() -> u64 {
+    let res = unsafe {
+        GetRunningInstance()
+    };
+    res
 }
 
 fn to_null_terminated(s: &str) -> Vec<u8> {
