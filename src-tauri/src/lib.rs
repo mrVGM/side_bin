@@ -32,26 +32,7 @@ fn open_file_directory(file: String) {
             }
         }
     };
-
-    let parent_dir = 'parent_path: {
-        if let Some(parent_path) = path.parent() {
-            break 'parent_path parent_path;
-        }
-        return;
-    };
-
-    let parent_dir_str = 'parent_dir_str: {
-        if let Some(parent_path) = parent_dir.to_str() {
-            break 'parent_dir_str parent_path;
-        }
-        return;
-    };
-
-    let _ = Command::new("cmd")
-        .arg("/c")
-        .arg("explorer")
-        .arg(parent_dir_str)
-        .spawn();
+    let _ = opener::reveal(path);
 }
 
 fn read_config_internal() -> Result<String, ()> {

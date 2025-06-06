@@ -27,6 +27,7 @@ uuid = { version = "1.17.0", features = ["v1"] }
 mac_address = "1.1.8"
 file_icon_provider = "0.4.0"
 image = "0.25.6"
+opener = { version = "0.8.2", features = ["reveal"] }
 
 [patch.crates-io]
 drag = { git = "https://github.com/mrVGM/drag-rs.git", branch = "combined_move_and_copy_effects", package = "drag" }

@@ -459,7 +459,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 item.addEventListener("mousemove", mousemoveHandler);
                 setTimeout(() => {
                     resolve(true);
-                }, 500);
+                }, 1000);
             });
             item.removeEventListener("mouseup", mouseupHandler);
             item.removeEventListener("mousemove", mousemoveHandler);
