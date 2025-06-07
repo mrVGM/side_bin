@@ -7,7 +7,6 @@ use std::{env, panic};
 use fs_mon::{file_tag::get_tag, trackers::{get_tracker_state, tick}};
 use image::ImageEncoder;
 use serde_json::json;
-use tauri::utils::platform::current_exe;
 use tauri::{AppHandle, Manager};
 
 mod fs_mon {
@@ -86,6 +85,55 @@ fn read_config_internal() -> Result<String, ()> {
     return Ok(content);
 }
 
+static STYLE: Mutex<Option<(SystemTime, String)>> = Mutex::new(None);
+fn read_style_internal() -> Result<(bool, String), ()> {
+    let current_exe = std::env::current_exe()
+        .map_err(|_| ())?;
+    let style = current_exe
+        .parent()
+        .ok_or(())?
+        .join("style.css");
+
+    let meta = style.metadata()
+        .map_err(|_| ())?;
+
+    let modified = meta.modified()
+        .map_err(|_| ())?;
+
+    let style_obj = &mut *STYLE.lock().unwrap();
+    let dur = match style_obj {
+        None => {
+            None
+        }
+        Some((time_point, _)) => {
+            let dur = modified.duration_since(*time_point);
+            dur.ok()
+        }
+    };
+
+    let should_update = match dur {
+        None => {
+            true
+        }
+        Some(dur) => {
+            !dur.is_zero()
+        }
+    };
+
+    if should_update {
+        let style_content = std::fs::read_to_string(&style)
+            .map_err(|_| ())?;
+        *style_obj = Some((modified, style_content));
+    }
+
+    match style_obj {
+        None => Err(()),
+        Some((_, content)) => {
+            Ok((should_update, content.to_owned()))
+        }
+    }
+}
+
 #[tauri::command]
 fn read_config() -> String {
     let content = read_config_internal();
@@ -93,6 +141,26 @@ fn read_config() -> String {
         Ok(s) => s,
         Err(()) => "{}".into()
     }
+}
+
+#[tauri::command]
+fn read_style() -> String {
+    let content = read_style_internal();
+    let json = match content {
+        Ok((changed, content)) => {
+            json!({
+                "valid": true,
+                "changed": changed,
+                "content": content
+            })
+        },
+        Err(()) => {
+            json!({
+                "valid": false
+            })
+        }
+    };
+    json.to_string()
 }
 
 #[tauri::command]
@@ -227,6 +295,7 @@ pub fn run() {
             monitor_command,
             get_file_tag,
             read_config,
+            read_style,
             get_file_icon,
             open_file_directory,
             exit_app

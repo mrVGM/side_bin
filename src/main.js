@@ -30,13 +30,36 @@ async function openFileDir(file) {
 
 async function readConfig() {
     const config = await invoke("read_config", { });
-    console.log(config);
     let configJSON = {};
     try {
         configJSON = JSON.parse(config);
     }
     catch(_) { }
     return configJSON;
+}
+
+async function readStyle() {
+    const style = await invoke("read_style", { });
+    let styleJSON = {};
+    try {
+        styleJSON = JSON.parse(style);
+    }
+    catch(_) { }
+
+    if (!styleJSON.valid) {
+        return;
+    }
+    if (!styleJSON.changed) {
+        return;
+    }
+    const blob = new Blob(
+        [styleJSON.content],
+        {
+            type: "text/style"
+        }
+    );
+
+    return blob;
 }
 
 async function getFileTag(file) {
@@ -300,6 +323,17 @@ window.addEventListener("DOMContentLoaded", async () => {
         setTimeout(refreshConfig, 1000);
     }
     setTimeout(refreshConfig, 1000);
+
+    async function refreshStyle() {
+        const blob = await readStyle();
+        if (blob) {
+            const css = URL.createObjectURL(blob);
+            const cssElem = document.querySelector("#dynamic_style");
+            cssElem.href = css;
+        }
+        setTimeout(refreshStyle, 1000);
+    }
+    refreshStyle();
 
     const mainElement = document.querySelector("#main");
     if (config.alignment === "vertical") {
