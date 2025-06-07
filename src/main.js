@@ -30,7 +30,12 @@ async function openFileDir(file) {
 
 async function readConfig() {
     const config = await invoke("read_config", { });
-    const configJSON = JSON.parse(config);
+    console.log(config);
+    let configJSON = {};
+    try {
+        configJSON = JSON.parse(config);
+    }
+    catch(_) { }
     return configJSON;
 }
 
@@ -265,10 +270,8 @@ async function setupTray() {
     await TrayIcon.new(options);
 }
 
-window.addEventListener("DOMContentLoaded", async () => {
-    await setupTray();
-
-    const config = await readConfig();
+async function updateConfig() {
+    let config = await readConfig();
     if (!config.alignment) {
         config.alignment = "vertical";
     }
@@ -284,6 +287,19 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (!config.collapsed) {
         config.collapsed = [20, 20];
     }
+
+    return config;
+}
+
+window.addEventListener("DOMContentLoaded", async () => {
+    await setupTray();
+
+    let config = await updateConfig();
+    async function refreshConfig() {
+        config = await updateConfig();
+        setTimeout(refreshConfig, 1000);
+    }
+    setTimeout(refreshConfig, 1000);
 
     const mainElement = document.querySelector("#main");
     if (config.alignment === "vertical") {

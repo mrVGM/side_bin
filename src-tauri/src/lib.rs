@@ -1,10 +1,13 @@
 use std::io::{BufWriter, Cursor};
 use std::str::FromStr;
+use std::sync::Mutex;
+use std::time::SystemTime;
 use std::{env, panic};
 
 use fs_mon::{file_tag::get_tag, trackers::{get_tracker_state, tick}};
 use image::ImageEncoder;
 use serde_json::json;
+use tauri::utils::platform::current_exe;
 use tauri::{AppHandle, Manager};
 
 mod fs_mon {
@@ -34,13 +37,51 @@ fn open_file_directory(file: String) {
     let _ = opener::reveal(path);
 }
 
+static CONFIG: Mutex<Option<(SystemTime, String)>> = Mutex::new(None);
 fn read_config_internal() -> Result<String, ()> {
-    let config =
-        std::path::PathBuf::from_str("config.json")
+    let current_exe = std::env::current_exe()
+        .map_err(|_| ())?;
+    let config = current_exe
+        .parent()
+        .ok_or(())?
+        .join("config.json");
+
+    let meta = config.metadata()
         .map_err(|_| ())?;
 
-    let content = std::fs::read_to_string(config).map_err(|_| ())?;
-    let _ = serde_json::Value::from_str(&content).map_err(|_| ())?;
+    let modified = meta.modified()
+        .map_err(|_| ())?;
+
+    let config_obj = &mut *CONFIG.lock().unwrap();
+    let dur = match config_obj {
+        None => {
+            None
+        }
+        Some((time_point, _)) => {
+            let dur = modified.duration_since(*time_point);
+            dur.ok()
+        }
+    };
+
+    let should_update = match dur {
+        None => {
+            true
+        }
+        Some(dur) => {
+            !dur.is_zero()
+        }
+    };
+
+    if should_update {
+        let config_content = std::fs::read_to_string(&config)
+            .map_err(|_| ())?;
+        *config_obj = Some((modified, config_content));
+    }
+
+    let content = match config_obj {
+        None => "{}".to_owned(),
+        Some((_, content)) => content.to_owned()
+    };
 
     return Ok(content);
 }
