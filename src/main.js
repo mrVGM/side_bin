@@ -52,14 +52,7 @@ async function readStyle() {
     if (!styleJSON.changed) {
         return;
     }
-    const blob = new Blob(
-        [styleJSON.content],
-        {
-            type: "text/style"
-        }
-    );
-
-    return blob;
+    return styleJSON.content;
 }
 
 async function getFileTag(file) {
@@ -324,12 +317,19 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     setTimeout(refreshConfig, 1000);
 
+    let cssBlob;
     async function refreshStyle() {
-        const blob = await readStyle();
-        if (blob) {
-            const css = URL.createObjectURL(blob);
+        const css = await readStyle();
+        if (css) {
+            cssBlob = new Blob(
+                [css],
+                {
+                    type: "text/css"
+                }
+            );
+            const url = URL.createObjectURL(cssBlob);
             const cssElem = document.querySelector("#dynamic_style");
-            cssElem.href = css;
+            cssElem.href = url;
         }
         setTimeout(refreshStyle, 1000);
     }
