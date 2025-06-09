@@ -231,6 +231,8 @@ async function registerFile(elem) {
     overlay.style.display = "none"
     elem.style.backgroundImage = "";
 
+    elem.destroy();
+
     stopChecks();
     await tagCheckRoutine;
 }
@@ -407,111 +409,66 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     collapseWindow();
 
-    const container = document.querySelector("#main");
-    const items = [];
-    for (let i = 0; i < 3; ++i)
-    {
+    function createSlot() {
         let item = createDOMElement(`
-<div class="item">
-    <div class="slot-overlay" id="overlay">
-        <div class="item-icon" id="item-icon"></div>
-        <div class="name" id="name"></div>
-        <div class="close" id="close"></div>
-    </div>
-</div>
-        `);
+            <slot class="item">
+            <div class="slot-overlay" id="overlay">
+            <div class="item-icon" id="item-icon"></div>
+            <div class="name" id="name"></div>
+            <div class="close" id="close"></div>
+            </div>
+            </slot>
+            `);
         container.appendChild(item);
-        items.push(item);
         const close = item.querySelector("#close");
-        item.close = close;
-    }
-
-    let droppedFile = undefined;
-
-    const dropSlots = [];
-    const hoverSlots = [];
-
-    items.forEach(item => {
-        let overlay = item.querySelector("#overlay");
-        overlay.style.display = "none";
-        item.closeFunc = undefined;
-        item.close.addEventListener("click", () => {
+        close.addEventListener("click", () => {
             if (item.closeFunc) {
                 item.closeFunc();
             }
-            item.closeFunc = undefined;
         });
+        item.close = close;
 
-        item.addEventListener("dblclick", () => {
-            if (item.storedFile) {
-                openFileDir(item.storedFile);
-            }
-        });
+        return item;
+    }
 
-        function hoverSlot(hovered) {
-            item.classList.remove("item-hovered");
-            if (hovered) {
-                item.classList.add("item-hovered");
-            }
+    const container = document.querySelector("#main");
+    const spacer = document.querySelector("spc");
+
+    let numSlots = 0;
+    async function dropFileInBin(payload) {
+        const paths = payload.paths;
+        const file = paths[0];
+
+        if (paths.length > 1) {
+            return;
+        }
+        if (file.startsWith("\\\\")) {
+            return;
         }
 
-        dropSlots.push(async payload => {
-            const rect = item.getBoundingClientRect();
-            const pos = payload.position;
-            const paths = payload.paths;
-            const file = paths[0];
+        let resp = await getFileTag(file);
+        if (resp.valid && droppedFiles[resp.tag]) {
+            return;
+        }
 
-            if (paths.length > 1) {
-                return;
-            }
-            if (item.storedFile) {
-                return;
-            }
-            if (file.startsWith("\\\\")) {
-                return;
-            }
+        const item = createSlot();
+        item.storedFile = file;
+        item.destroy = () => {
+            item.parentElement.removeChild(item);
 
-            let resp = await getFileTag(file);
-            if (resp.valid && droppedFiles[resp.tag]) {
-                return;
-            }
+            const numSlots = container.querySelectorAll("slot").length;
+            container.style.flex = numSlots;
+            spacer.style.flex = 3 - numSlots;
+        };
 
-            if (
-                rect.x <= pos.x &&
-                pos.x <= rect.x + rect.width &&
-                rect.y <= pos.y &&
-                pos.y <= rect.y + rect.height) {
-                item.storedFile = file;
-                registerFile(item);
-                item.classList.add("item-full");
-                overlay.style.display = "";
-            }
-        });
+        const numSlots = container.querySelectorAll("slot").length;
+        container.style.flex = numSlots;
+        spacer.style.flex = 3 - numSlots;
 
+        registerFile(item);
+        let overlay = item.querySelector("#overlay");
+        overlay.style.display = "";
 
-        hoverSlots.push((payload) => {
-            if (!payload) {
-                hoverSlot(false);
-                return;
-            }
-            const rect = item.getBoundingClientRect();
-            const pos = payload.position;
-            if (
-                rect.x <= pos.x &&
-                pos.x <= rect.x + rect.width &&
-                rect.y <= pos.y &&
-                pos.y <= rect.y + rect.height) {
-                if (!item.storedFile) {
-                    hoverSlot(true);
-                }
-            }
-            else {
-                hoverSlot(false);
-            }
-        });
-    });
-
-    items.forEach(item => {
         item.addEventListener("mousedown", async () => {
             if (!item.storedFile) {
                 return;
@@ -542,7 +499,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 });
             }
         });
-    });
+    }
 
     let webview = window.__TAURI__.webview;
     const unlisten = await webview
@@ -551,24 +508,13 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         if (event.payload.type === 'over') {
             expandWindow();
-            hoverSlots.forEach(slot => {
-                slot(event.payload);
-            });
         } else if (event.payload.type === 'drop') {
-            droppedFile = event.payload.paths[0];
-            async function checkFileAndDrop() {
-                dropSlots.forEach(slot => {
-                    slot(event.payload);
-                });
-                hoverSlots.forEach(slot => {
-                    slot();
-                });
-            }
-            checkFileAndDrop();
+            dropFileInBin(event.payload);
         } else {
             collapseWindow();
         }
     });
+
     document.addEventListener("mouseover", (evt) => {
         if (evt.relatedTarget)
         {
