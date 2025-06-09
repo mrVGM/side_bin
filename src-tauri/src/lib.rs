@@ -237,6 +237,20 @@ fn resize_win(app: AppHandle, x: i32, y: i32, w: u32, h: u32) {
     window.set_size(s).unwrap();
 }
 
+#[tauri::command]
+fn get_win_pos(app: AppHandle) -> String {
+    let window = app.get_webview_window("main").unwrap();
+    if let Ok(pos) = window.outer_position() {
+        return json!({
+            "valid": true,
+            "pos": [pos.x, pos.y]
+        }).to_string();
+    }
+    json!({
+        "valid": false
+    }).to_string()
+}
+
 
 #[tauri::command]
 fn get_file_icon(file: &str) -> String {
@@ -292,6 +306,7 @@ pub fn run() {
     .invoke_handler(
         tauri::generate_handler![
             resize_win,
+            get_win_pos,
             monitor_command,
             get_file_tag,
             read_config,

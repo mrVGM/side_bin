@@ -31,6 +31,24 @@ body {
     flex: 1;
 }
 
+bin {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+.move-handle {
+  width: 80px;
+  height: 10px;
+  background: #888;
+  border-radius: 50px; /* fully rounded ends */
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: grab;
+}
+
 .slot-overlay {
     display: flex;
     flex-direction: column;

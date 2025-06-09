@@ -73,6 +73,15 @@ async function resizeWin(x, y, w, h) {
     });
 }
 
+async function getWinPos() {
+    const resp = await invoke("get_win_pos", {});
+    const respJSON = JSON.parse(resp);
+
+    if (respJSON.valid) {
+        return respJSON.pos;
+    }
+}
+
 async function monitorCommand(action, file) {
     let response = await invoke("monitor_command", {
         action,
@@ -339,6 +348,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (config.alignment === "vertical") {
         mainElement.classList.add("container-vertical");
     }
+
+    const bin = document.querySelector("bin");
     
     mainTick();
 
@@ -350,9 +361,13 @@ window.addEventListener("DOMContentLoaded", async () => {
                 -config.anchor[0] * size[0],
                 -config.anchor[1] * size[1]
             ];
+            let pos = await getWinPos();
+            if (!pos) {
+                pos = config.position;
+            }
             const position = [
-                config.position[0] + offset[0],
-                config.position[1] + offset[1]
+                pos[0] + offset[0],
+                pos[1] + offset[1]
             ];
             await resizeWin(
                 position[0],
@@ -361,7 +376,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 size[1]);
         }
         state = "expanded";
-        mainElement.style.display = "";
+        bin.style.display = "";
     }
     async function collapseWindow() {
         if (state !== "collapsed")
@@ -371,9 +386,14 @@ window.addEventListener("DOMContentLoaded", async () => {
                 -config.anchor[0] * size[0],
                 -config.anchor[1] * size[1]
             ];
+            let pos = await getWinPos();
+            if (!pos) {
+                pos = config.position;
+            }
+
             const position = [
-                config.position[0] + offset[0],
-                config.position[1] + offset[1]
+                pos[0] + offset[0],
+                pos[1] + offset[1]
             ];
             await resizeWin(
                 position[0],
@@ -382,8 +402,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 size[1]);
         }
         state = "collapsed";
-        mainElement.classList.remove("main-hidden");
-        mainElement.style.display = "none";
+        bin.style.display = "none";
     }
 
     collapseWindow();
