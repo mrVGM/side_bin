@@ -352,6 +352,14 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     const bin = document.querySelector("bin");
+
+    let movingWindow = false;
+    {
+        const moveHandle = document.querySelector("#move_handle");
+        moveHandle.addEventListener("mousedown", () => {
+            movingWindow = true;
+        });
+    }
     
     mainTick();
 
@@ -381,6 +389,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         bin.style.display = "";
     }
     async function collapseWindow() {
+        if (movingWindow)
+        {
+            movingWindow = false;
+            return;
+        }
+
         if (state !== "collapsed")
         {
             const size = [config.collapsed[0], config.collapsed[1]];
