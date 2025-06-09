@@ -434,7 +434,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     const container = document.querySelector("#main");
     const spacer = document.querySelector("spc");
 
-    let numSlots = 0;
     async function dropFileInBin(payload) {
         const paths = payload.paths;
         const file = paths[0];
@@ -444,6 +443,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
         if (file.startsWith("\\\\")) {
             return;
+        }
+        {
+            const numSlots = container.querySelectorAll("slot").length;
+            if (numSlots >= 3) {
+                return;
+            }
         }
 
         let resp = await getFileTag(file);
