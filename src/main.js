@@ -488,6 +488,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         let overlay = item.querySelector("#overlay");
         overlay.style.display = "";
 
+        item.addEventListener("dblclick", () => {
+            if (item.storedFile) {
+                openFileDir(item.storedFile);
+            }
+        });
+
         item.addEventListener("mousedown", async () => {
             if (!item.storedFile) {
                 return;
