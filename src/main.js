@@ -1,5 +1,7 @@
 const { invoke } = window.__TAURI__.core;
 
+let config;
+
 function createDOMElement(html) {
     let tmp = document.createElement('template');
     tmp.innerHTML = html;
@@ -210,8 +212,8 @@ async function registerFile(elem) {
             if (lastSlash >= 0)
             {
                 let fileName = elem.storedFile.substring(lastSlash + 1);
-                if (fileName.length > 30) {
-                    fileName = fileName.substring(fileName.length - 30);
+                if (fileName.length > config.nameLimit) {
+                    fileName = fileName.substring(fileName.length - config.nameLimit);
                     fileName = "..." + fileName;
                 }
                 name.innerHTML = fileName;
@@ -298,10 +300,8 @@ async function setupTray() {
 }
 
 async function updateConfig() {
-    let config = await readConfig();
-    if (!config.alignment) {
-        config.alignment = "vertical";
-    }
+    config = await readConfig();
+
     if (!config.anchor) {
         config.anchor = [0, 0];
     }
@@ -313,6 +313,9 @@ async function updateConfig() {
     }
     if (!config.collapsed) {
         config.collapsed = [20, 20];
+    }
+    if (!config.nameLimit) {
+        config.nameLimit = 30;
     }
 
     return config;
@@ -347,10 +350,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     refreshStyle();
 
     const mainElement = document.querySelector("#main");
-    if (config.alignment === "vertical") {
-        mainElement.classList.add("container-vertical");
-    }
-
     const bin = document.querySelector("bin");
 
     let movingWindow = false;
@@ -375,6 +374,11 @@ window.addEventListener("DOMContentLoaded", async () => {
             if (!pos) {
                 pos = config.position;
             }
+            else {
+                pos[0] += config.anchor[0] * config.expanded[0];
+                pos[1] += config.anchor[1] * config.expanded[1];
+            }
+
             const position = [
                 pos[0] + offset[0],
                 pos[1] + offset[1]
@@ -405,6 +409,10 @@ window.addEventListener("DOMContentLoaded", async () => {
             let pos = await getWinPos();
             if (!pos) {
                 pos = config.position;
+            }
+            else {
+                pos[0] += config.anchor[0] * config.collapsed[0];
+                pos[1] += config.anchor[1] * config.collapsed[1];
             }
 
             const position = [

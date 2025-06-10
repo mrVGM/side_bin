@@ -36,15 +36,42 @@ fn open_file_directory(file: String) {
     let _ = opener::reveal(path);
 }
 
+fn get_config_file_path(filename: &str) -> Result<std::path::PathBuf, ()> {
+    fn get_file_in_exe_dir(filename: &str) -> Result<std::path::PathBuf, ()> {
+        let current_exe = std::env::current_exe()
+            .map_err(|_| ())?;
+
+        let parent = current_exe.parent()
+            .ok_or(())?;
+
+        let path = parent.join(filename);
+        match path.exists() {
+            true => Ok(path),
+            false => Err(())
+        }
+    }
+    fn get_file_in_config_dir(filename: &str) -> Result<std::path::PathBuf, ()> {
+        let parent = env_home::env_home_dir()
+            .ok_or(())?
+            .join(".side_bin");
+
+        let path = parent.join(filename);
+        match path.exists() {
+            true => Ok(path),
+            false => Err(())
+        }
+    }
+
+    if let Ok(path) = get_file_in_exe_dir(filename) {
+        return Ok(path);
+    }
+
+    get_file_in_config_dir(filename)
+}
+
 static CONFIG: Mutex<Option<(SystemTime, String)>> = Mutex::new(None);
 fn read_config_internal() -> Result<String, ()> {
-    let current_exe = std::env::current_exe()
-        .map_err(|_| ())?;
-    let config = current_exe
-        .parent()
-        .ok_or(())?
-        .join("config.json");
-
+    let config = get_config_file_path("config.json")?;
     let meta = config.metadata()
         .map_err(|_| ())?;
 
@@ -87,13 +114,7 @@ fn read_config_internal() -> Result<String, ()> {
 
 static STYLE: Mutex<Option<(SystemTime, String)>> = Mutex::new(None);
 fn read_style_internal() -> Result<(bool, String), ()> {
-    let current_exe = std::env::current_exe()
-        .map_err(|_| ())?;
-    let style = current_exe
-        .parent()
-        .ok_or(())?
-        .join("style.css");
-
+    let style = get_config_file_path("style.css")?;
     let meta = style.metadata()
         .map_err(|_| ())?;
 
