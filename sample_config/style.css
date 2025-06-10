@@ -1,5 +1,5 @@
 html {
-    background: yellow;
+    background: aliceblue;
 }
 
 .move-handle {
@@ -9,7 +9,7 @@ html {
 }
 
 .slot-container {
-    flex-direction: column;
+    flex-direction: row;
 }
 
 .name {

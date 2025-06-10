@@ -1,5 +1,6 @@
 {
     "collapsed": [50, 50],
-    "expanded": [100, 300],
-    "nameLimit": 10
+    "expanded": [300, 100],
+    "anchor": [0.5, 0],
+    "nameLimit": 20
 }
