@@ -349,7 +349,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     refreshStyle();
 
-    const mainElement = document.querySelector("#main");
     const bin = document.querySelector("bin");
 
     let movingWindow = false;
@@ -362,29 +361,97 @@ window.addEventListener("DOMContentLoaded", async () => {
     
     mainTick();
 
-    function changeWinSize(pos, from, to, anchor) {
-        const anchorPos = [
-            (1 - anchor[0]) * pos[0] + anchor[0] * (pos[0] + from[0]),
-            (1 - anchor[1]) * pos[1] + anchor[1] * (pos[1] + from[1])
-        ];
+    const expanded = Symbol("expanded");
+    const collapsed = Symbol("collapsed");
 
-        const newPos = [
-            anchorPos[0] - anchor[0] * to[0],
-            anchorPos[1] - anchor[1] * to[1]
-        ];
+    const winState = {};
+    {
 
-        return newPos.map(x => {
-            return Math.floor(x);
-        })
-    }
+        let curState;
+        let toApply;
 
-    let state;
-    async function expandWindow() {
-        if (state !== "expanded") {
+        let notify;
+
+        function* stateChangeGen() {
+            while (true) {
+                yield new Promise(async resolve => {
+                    while (curState === toApply) {
+                        await new Promise(resolve => {
+                            notify = () => {
+                                notify = undefined;
+                                resolve();
+                            };
+                        });
+                    }
+
+                    resolve();
+                });
+            }
+        }
+
+        const stateChangeEnumarable = stateChangeGen();
+
+        winState.getNextState = async () => {
+            return await stateChangeEnumarable.next().value;
+        };
+
+        winState.reqStateChange = newState => {
+            toApply = newState;
+            if (notify) {
+                notify();
+            }
+        };
+
+        winState.setState = newState => {
+            curState = newState;
+        };
+
+        async function resizeWinRoutine() {
+            while (true) {
+                await stateChangeEnumarable.next().value;
+                await new Promise(resolve => {
+                    setTimeout(() => {
+                        resolve()
+                    }, 500);
+                });
+
+                if (curState === toApply) {
+                    continue;
+                }
+
+                if (toApply === collapsed) {
+                    await collapseWindowInternal();
+                }
+                else {
+                    await expandWindowInternal();
+                }
+
+            }
+        }
+
+        resizeWinRoutine();
+        function changeWinSize(pos, from, to, anchor) {
+            const anchorPos = [
+                (1 - anchor[0]) * pos[0] + anchor[0] * (pos[0] + from[0]),
+                (1 - anchor[1]) * pos[1] + anchor[1] * (pos[1] + from[1])
+            ];
+
+            const newPos = [
+                anchorPos[0] - anchor[0] * to[0],
+                anchorPos[1] - anchor[1] * to[1]
+            ];
+
+            return newPos.map(x => {
+                return Math.floor(x);
+            })
+        }
+
+        async function expandWindowInternal() {
             let pos = await getWinPos();
             if (!pos) {
                 pos = [500, 500];
             }
+
             const newPos = changeWinSize(
                 pos,
                 config.collapsed,
@@ -396,19 +463,14 @@ window.addEventListener("DOMContentLoaded", async () => {
                 newPos[1],
                 config.expanded[0],
                 config.expanded[1]);
-        }
-        state = "expanded";
-        bin.style.display = "";
-    }
-    async function collapseWindow() {
-        if (movingWindow)
-        {
-            movingWindow = false;
-            return;
+
+            bin.style.display = "";
+
+            winState.setState(expanded);
         }
 
-        if (state !== "collapsed")
-        {
+        async function collapseWindowInternal() {
+
             let pos = await getWinPos();
             if (!pos) {
                 pos = [500, 500];
@@ -419,14 +481,27 @@ window.addEventListener("DOMContentLoaded", async () => {
                 config.collapsed,
                 config.anchor);
 
+            bin.style.display = "none";
             await resizeWin(
                 newPos[0],
                 newPos[1],
                 config.collapsed[0],
                 config.collapsed[1]);
+
+            winState.setState(collapsed);
         }
-        state = "collapsed";
-        bin.style.display = "none";
+    }
+
+    function expandWindow() {
+        winState.reqStateChange(expanded);
+    }
+    function collapseWindow() {
+        if (movingWindow)
+        {
+            movingWindow = false;
+            return;
+        }
+        winState.reqStateChange(collapsed);
     }
 
     collapseWindow();
