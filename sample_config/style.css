@@ -1,0 +1,19 @@
+html {
+    background: yellow;
+}
+
+.move-handle {
+  width: 80%;
+  height: 10px;
+  background: #888;
+}
+
+.slot-container {
+    flex-direction: column;
+}
+
+.name {
+    font-size: 12px;
+}
+
+
