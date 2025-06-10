@@ -362,32 +362,40 @@ window.addEventListener("DOMContentLoaded", async () => {
     
     mainTick();
 
+    function changeWinSize(pos, from, to, anchor) {
+        const anchorPos = [
+            (1 - anchor[0]) * pos[0] + anchor[0] * (pos[0] + from[0]),
+            (1 - anchor[1]) * pos[1] + anchor[1] * (pos[1] + from[1])
+        ];
+
+        const newPos = [
+            anchorPos[0] - anchor[0] * to[0],
+            anchorPos[1] - anchor[1] * to[1]
+        ];
+
+        return newPos.map(x => {
+            return Math.floor(x);
+        })
+    }
+
     let state;
     async function expandWindow() {
         if (state !== "expanded") {
-            const size = [config.expanded[0], config.expanded[1]];
-            const offset = [
-                -config.anchor[0] * size[0],
-                -config.anchor[1] * size[1]
-            ];
             let pos = await getWinPos();
             if (!pos) {
-                pos = config.position;
+                pos = [500, 500];
             }
-            else {
-                pos[0] += config.anchor[0] * config.expanded[0];
-                pos[1] += config.anchor[1] * config.expanded[1];
-            }
+            const newPos = changeWinSize(
+                pos,
+                config.collapsed,
+                config.expanded,
+                config.anchor);
 
-            const position = [
-                pos[0] + offset[0],
-                pos[1] + offset[1]
-            ];
             await resizeWin(
-                position[0],
-                position[1],
-                size[0],
-                size[1]);
+                newPos[0],
+                newPos[1],
+                config.expanded[0],
+                config.expanded[1]);
         }
         state = "expanded";
         bin.style.display = "";
@@ -401,29 +409,21 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         if (state !== "collapsed")
         {
-            const size = [config.collapsed[0], config.collapsed[1]];
-            const offset = [
-                -config.anchor[0] * size[0],
-                -config.anchor[1] * size[1]
-            ];
             let pos = await getWinPos();
             if (!pos) {
-                pos = config.position;
+                pos = [500, 500];
             }
-            else {
-                pos[0] += config.anchor[0] * config.collapsed[0];
-                pos[1] += config.anchor[1] * config.collapsed[1];
-            }
+            const newPos = changeWinSize(
+                pos,
+                config.expanded,
+                config.collapsed,
+                config.anchor);
 
-            const position = [
-                pos[0] + offset[0],
-                pos[1] + offset[1]
-            ];
             await resizeWin(
-                position[0],
-                position[1],
-                size[0],
-                size[1]);
+                newPos[0],
+                newPos[1],
+                config.collapsed[0],
+                config.collapsed[1]);
         }
         state = "collapsed";
         bin.style.display = "none";
